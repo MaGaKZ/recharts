@@ -67,7 +67,7 @@ export default class Demo extends Component {
     return <path d={`M${x + width / 2},${y}L${x + width},${y + height / 2}L${x + width / 2},${y + height}L${x},${y + height / 2}Z`} fill="red" stroke="none" />
   }
 
-  render () {
+  render() {
     const { simple, gap } = this.state;
 
     return (
@@ -87,16 +87,17 @@ export default class Demo extends Component {
           />
         </Surface>
         <p>Brush has specified gap</p>
-        <Surface width={800} height={200}>
+        <Surface width={800} height={800}>
           <Brush
             startIndex={gap.startIndex}
             endIndex={gap.endIndex}
             x={100}
-            y={50}
+            y={-50}
             width={400}
             height={40}
             data={this.data}
             gap={5}
+            verticalLayout
             onChange={this.handleGapChange}
           />
         </Surface>

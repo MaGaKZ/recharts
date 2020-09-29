@@ -28,7 +28,7 @@ interface InternalBrushProps {
 
 interface BrushProps extends InternalBrushProps {
   className?: string;
-
+  verticalLayout?: boolean;
   height: number;
   travellerWidth?: number;
   traveller?: BrushTravellerType;
@@ -262,7 +262,7 @@ class Brush extends PureComponent<Props, State> {
     this.setState({
       isTravellerMoving: false,
       isSlideMoving: true,
-      slideMoveStartX: event.pageX,
+      slideMoveStartX: this.props.verticalLayout ? event.pageY : event.pageX,
     });
 
     this.attachDragEndListener();
@@ -270,8 +270,8 @@ class Brush extends PureComponent<Props, State> {
 
   handleSlideDrag(e: React.Touch | MouseEvent<SVGGElement>) {
     const { slideMoveStartX, startX, endX } = this.state;
-    const { x, width, travellerWidth, startIndex, endIndex, onChange } = this.props;
-    let delta = e.pageX - slideMoveStartX;
+    const { x, width, travellerWidth, startIndex, endIndex, onChange, verticalLayout } = this.props;
+    let delta = (verticalLayout ? e.pageY : e.pageX) - slideMoveStartX;
 
     if (delta > 0) {
       delta = Math.min(delta, x + width - travellerWidth - endX, x + width - travellerWidth - startX);
@@ -290,7 +290,7 @@ class Brush extends PureComponent<Props, State> {
     this.setState({
       startX: startX + delta,
       endX: endX + delta,
-      slideMoveStartX: e.pageX,
+      slideMoveStartX: verticalLayout ? e.pageY : e.pageX,
     });
   }
 
@@ -301,7 +301,7 @@ class Brush extends PureComponent<Props, State> {
       isSlideMoving: false,
       isTravellerMoving: true,
       movingTravellerId: id,
-      brushMoveStartX: event.pageX,
+      brushMoveStartX: this.props.verticalLayout ? event.pageY : event.pageX,
     });
 
     this.attachDragEndListener();
@@ -311,10 +311,10 @@ class Brush extends PureComponent<Props, State> {
     const { brushMoveStartX, movingTravellerId, endX, startX } = this.state;
     const prevValue = this.state[movingTravellerId];
 
-    const { x, width, travellerWidth, onChange, gap, data } = this.props;
+    const { x, width, travellerWidth, onChange, gap, data, verticalLayout } = this.props;
     const params = { startX: this.state.startX, endX: this.state.endX };
 
-    let delta = e.pageX - brushMoveStartX;
+    let delta = (verticalLayout ? e.pageY : e.pageX) - brushMoveStartX;
     if (delta > 0) {
       delta = Math.min(delta, x + width - travellerWidth - prevValue);
     } else if (delta < 0) {
@@ -341,7 +341,7 @@ class Brush extends PureComponent<Props, State> {
     this.setState(
       {
         [movingTravellerId]: prevValue + delta,
-        brushMoveStartX: e.pageX,
+        brushMoveStartX: verticalLayout ? e.pageY : e.pageX,
       },
       () => {
         if (onChange) {
@@ -400,7 +400,7 @@ class Brush extends PureComponent<Props, State> {
   }
 
   renderTravellerLayer(travellerX: number, id: BrushTravellerId) {
-    const { y, travellerWidth, height, traveller } = this.props;
+    const { y, travellerWidth, height, traveller, verticalLayout } = this.props;
     const x = Math.max(travellerX, this.props.x);
     const travellerProps = {
       ...filterProps(this.props),
@@ -409,7 +409,8 @@ class Brush extends PureComponent<Props, State> {
       width: travellerWidth,
       height,
     };
-
+    let style = { cursor: 'col-resize' };
+    if (verticalLayout) style = { cursor: 'row-resize' };
     return (
       <Layer
         className="recharts-brush-traveller"
@@ -417,7 +418,7 @@ class Brush extends PureComponent<Props, State> {
         onMouseLeave={this.handleLeaveSlideOrTraveller}
         onMouseDown={this.travellerDragStartHandlers[id]}
         onTouchStart={this.travellerDragStartHandlers[id]}
-        style={{ cursor: 'col-resize' }}
+        style={style}
       >
         {Brush.renderTraveller(traveller, travellerProps)}
       </Layer>
@@ -482,7 +483,7 @@ class Brush extends PureComponent<Props, State> {
   }
 
   render() {
-    const { data, className, children, x, y, width, height, alwaysShowText } = this.props;
+    const { data, className, children, x, y, width, height, alwaysShowText, verticalLayout } = this.props;
     const { startX, endX, isTextActive, isSlideMoving, isTravellerMoving } = this.state;
 
     if (
@@ -500,8 +501,8 @@ class Brush extends PureComponent<Props, State> {
 
     const layerClass = classNames('recharts-brush', className);
     const isPanoramic = React.Children.count(children) === 1;
-    const style = generatePrefixStyle('userSelect', 'none');
-
+    let style = generatePrefixStyle('userSelect', 'none');
+    if (verticalLayout) style = { ...style, transform: 'rotate(90deg)' };
     return (
       <Layer
         className={layerClass}
